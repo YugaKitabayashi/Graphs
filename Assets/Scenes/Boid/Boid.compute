@@ -1,0 +1,79 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Boid
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> position;
+RWTexture2D<float4> velocity;
+
+float cohesionForce;
+float separationForce;
+float alignmentForce;
+
+float cohesionDistance;
+float separationDistance;
+float alignmentDistance;
+
+float cohesionAngleCos;
+float separationAngleCos;
+float alignmentAngleCos;
+
+float boundaryForce;
+float boundaryDistance;
+float minVelocity;
+float maxVelocity;
+
+float deltaTime;
+uint length;
+
+[numthreads(8,8,1)]
+void Boid (uint2 id : SV_DispatchThreadID)
+{
+	float4 c = float4(0.0, 0.0, 0.0, 0.0);
+	float4 s = float4(0.0, 0.0, 0.0, 0.0);
+	float4 a = float4(0.0, 0.0, 0.0, 0.0);
+
+	float cn = 0;
+	float an = 0;
+
+	uint2 index = uint2(0, 0);
+	for (; index.x < length; index.x++) {
+		for (index.y = 0; index.y < length; index.y++) {
+			if (id.x == index.x && id.y == index.y)continue;
+
+			float4 direction = position[index] - position[id.xy];
+			float d_2 = dot(direction, direction);
+			float distance = sqrt(d_2);
+			float angle = dot(normalize(direction), normalize(velocity[id.xy]));
+
+			if (distance < cohesionDistance && angle > cohesionAngleCos) {
+				c += direction;
+				cn++;
+			}
+
+			if (distance < separationDistance && angle > separationAngleCos) {
+				s += direction / d_2;
+			}
+
+			if (distance < alignmentDistance && angle > alignmentAngleCos) {
+				a += velocity[index];
+				an++;
+			}
+		}
+	}
+
+	if (cn > 0)c *= cohesionForce / cn;
+	if (an > 0)a *= alignmentForce / an;
+	s *= separationForce;
+
+	float distance = sqrt(dot(position[id.xy], position[id.xy]));
+	float4 b = -boundaryForce * position[id.xy] / (1.0 + exp(boundaryDistance-distance));
+
+	velocity[id.xy] += (c + s + a + b) * deltaTime;
+
+	distance = sqrt(dot(velocity[id.xy], velocity[id.xy]));
+	if (distance < minVelocity)velocity[id.xy] *= minVelocity / distance;
+	if (distance > maxVelocity)velocity[id.xy] *= maxVelocity / distance;
+
+	position[id.xy] += velocity[id.xy] * deltaTime;
+}

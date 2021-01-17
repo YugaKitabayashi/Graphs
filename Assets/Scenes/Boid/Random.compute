@@ -1,0 +1,39 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Random
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> positionResult;
+RWTexture2D<float4> velocityResult;
+float positionRange;
+float velocityRange;
+
+[numthreads(8,8,1)]
+void Random (uint2 id : SV_DispatchThreadID)
+{
+    float u = frac(sin(id.x) * 354.168 + cos(!id.x) * 975.341);
+    float v = frac(sin(id.y) * 976.184 + cos(!id.y) * 106.483);
+    float r = frac(sin(id.x^id.y) * 631.578 + cos(!(id.x^id.y)) * 468.137);
+
+    v *= 6.283185;
+    r = pow(r, 0.333333);
+    u = (-2 * u + 1) * r;
+    positionResult[id.xy].x = u;
+    u = sqrt(1 - u * u) * r;
+    positionResult[id.xy].y = u*cos(v);
+    positionResult[id.xy].z = u*sin(v);
+    positionResult[id.xy] *= positionRange;
+
+    u = frac(sin(id.x) * 249.341 + cos(!id.x) * 153.674);
+    v = frac(sin(id.y) * 731.648 + cos(!id.y) * 214.789);
+    r = frac(sin(id.x ^ id.y) * 841.164 + cos(!(id.x ^ id.y)) * 214.554);
+
+    v *= 6.283185;
+    r = pow(r, 0.333333);
+    u = (-2 * u + 1) * r;
+    positionResult[id.xy].x = u;
+    u = sqrt(1 - u * u) * r;
+    positionResult[id.xy].y = u * cos(v);
+    positionResult[id.xy].z = u * sin(v);
+    positionResult[id.xy] *= positionRange;
+}
