@@ -518,7 +518,7 @@ VisualEffect:
       - m_Value: {fileID: 0}
         m_Name: rectMap
         m_Overridden: 1
-      - m_Value: {fileID: 7636534397424324875, guid: 46f7193e1be378148b920f66d44fd2e8,
+      - m_Value: {fileID: -9016247358364817408, guid: 46f7193e1be378148b920f66d44fd2e8,
           type: 2}
         m_Name: font
         m_Overridden: 1
