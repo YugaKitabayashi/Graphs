@@ -29,22 +29,24 @@ uint length;
 [numthreads(8,8,1)]
 void Boid (uint2 id : SV_DispatchThreadID)
 {
-	float4 c = float4(0.0, 0.0, 0.0, 0.0);
-	float4 s = float4(0.0, 0.0, 0.0, 0.0);
-	float4 a = float4(0.0, 0.0, 0.0, 0.0);
+	float3 c = float3(0.0, 0.0, 0.0);
+	float3 s = float3(0.0, 0.0, 0.0);
+	float3 a = float3(0.0, 0.0, 0.0);
 
 	float cn = 0;
 	float an = 0;
 
+	float3 v = velocity[id.xy];
+	float3 p = position[id.xy];
 	uint2 index = uint2(0, 0);
 	for (; index.x < length; index.x++) {
 		for (index.y = 0; index.y < length; index.y++) {
 			if (id.x == index.x && id.y == index.y)continue;
 
-			float4 direction = position[index] - position[id.xy];
+			float3 direction = position[index] - p;
 			float d_2 = dot(direction, direction);
 			float distance = sqrt(d_2);
-			float angle = dot(normalize(direction), normalize(velocity[id.xy]));
+			float angle = dot(normalize(direction), normalize(v));
 
 			if (distance < cohesionDistance && angle > cohesionAngleCos) {
 				c += direction;
@@ -66,14 +68,23 @@ void Boid (uint2 id : SV_DispatchThreadID)
 	if (an > 0)a *= alignmentForce / an;
 	s *= separationForce;
 
-	float distance = sqrt(dot(position[id.xy], position[id.xy]));
-	float4 b = -boundaryForce * position[id.xy] / (1.0 + exp(boundaryDistance-distance));
+	float distance = sqrt(dot(p, p));
+	float3 b = -boundaryForce * p / (1.0 + exp(boundaryDistance-distance));
 
-	velocity[id.xy] += (c + s + a + b) * deltaTime;
+	v += (c + s + a + b) * deltaTime;
 
-	distance = sqrt(dot(velocity[id.xy], velocity[id.xy]));
-	if (distance < minVelocity)velocity[id.xy] *= minVelocity / distance;
-	if (distance > maxVelocity)velocity[id.xy] *= maxVelocity / distance;
+	distance = sqrt(dot(v, v));
+	if (distance < minVelocity) {
+		v *= minVelocity / distance;
+		distance = minVelocity;
+	}
+	if (distance > maxVelocity) {
+		v *= maxVelocity / distance;
+		distance = maxVelocity;
+	}
+	velocity[id.xy] = float4(v, distance);
 
-	position[id.xy] += velocity[id.xy] * deltaTime;
+	p += v * deltaTime;
+	distance = sqrt(dot(p, p));
+	position[id.xy] = float4(p, distance);
 }

@@ -13,6 +13,7 @@ public class BoidSimulation : MonoBehaviour
     RenderTexture velocity;
 
     int length =128;
+    int size;
     int boidKernel;
     public VisualEffect effect;
 
@@ -34,6 +35,8 @@ public class BoidSimulation : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        size = length / 8;
+
         position = new RenderTexture(length, length, 0, RenderTextureFormat.ARGBFloat);
         position.enableRandomWrite = true;
         position.Create();
@@ -56,8 +59,9 @@ public class BoidSimulation : MonoBehaviour
         random.SetTexture(randomKernel, "velocityResult", velocity);
         random.SetFloat("positionRange", boundaryDistance);
         random.SetFloat("velocityRange", maxVelocity / Mathf.Sqrt(3f));
-        random.Dispatch(randomKernel, 16, 16, 1);
+        random.Dispatch(randomKernel, size, size, 1);
 
+        effect.SetInt("length", length);
         effect.SetTexture("position", position);
         effect.SetTexture("velocity", velocity);
     }
@@ -80,6 +84,6 @@ public class BoidSimulation : MonoBehaviour
         boid.SetFloat("separationAngleCos", separationAngleCos);
         boid.SetFloat("alignmentAngleCos", alignmentAngleCos);
         boid.SetFloat("deltaTime", Time.deltaTime);
-        boid.Dispatch(boidKernel, 16, 16, 1);
+        boid.Dispatch(boidKernel, size, size, 1);
     }
 }

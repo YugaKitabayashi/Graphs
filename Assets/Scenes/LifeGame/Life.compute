@@ -1,0 +1,49 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Life
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float> field;
+int aliveMin;
+int aliveMax;
+int birthMin;
+int birthMax;
+
+[numthreads(4,4,4)]
+void Life(uint3 id : SV_DispatchThreadID)
+{
+	uint3 size;
+	field.GetDimensions(size.x, size.y, size.z);
+	int sum = -field[id.xyz];
+	uint3x3 p =
+		uint3x3(id.x == 0 ? size.x - 1 : id.x - 1,
+			id.y == 0 ? size.y - 1 : id.y - 1,
+			id.z == 0 ? size.z - 1 : id.z - 1,
+			id.xyz,
+			id.x == size.x - 1 ? 0 : id.x + 1,
+			id.y == size.y - 1 ? 0 : id.y + 1,
+			id.z == size.z - 1 ? 0 : id.z + 1);
+
+	for (int x = 0; x < 3; x++) {
+		for (int y = 0; y < 3; y++) {
+			for (int z = 0; z < 3; z++) {
+				uint3 q;
+				q.x = p[x][0];
+				q.y = p[y][1];
+				q.z = p[z][2];
+				if (field[q] > 0)sum++;
+			}
+		}
+	}
+
+	if (field[id.xyz] > 0) {
+		if (sum < aliveMin || aliveMax < sum) {
+			field[id.xyz] = 0.0;
+		}
+	}
+	else {
+		if (birthMin <= sum && sum <= birthMax) {
+			field[id.xyz] = 1.0;
+		}
+	}
+}

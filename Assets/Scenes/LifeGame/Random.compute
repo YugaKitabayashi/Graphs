@@ -1,0 +1,19 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Random
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float> field;
+float4 seed;
+uint posX;
+uint posY;
+uint posZ;
+
+
+[numthreads(4,4,4)]
+void Random (uint3 id : SV_DispatchThreadID)
+{
+	float r = frac(sin((id.x^id.y) * seed.x) * seed.y + cos(id.z * seed.z) * seed.w);
+	uint3 p = uint3(posX,posY,posZ);
+	field[id.xyz + p] = r < 0.25;
+}
